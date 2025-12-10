@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FID- PersonalOrga</title>
+
+<!-- PDF libs (will be used at end) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+:root{
+  --bg:#0f2a44;
+  --panel:#203553;
+  --accent:#FFA500;
+  --accent-strong:#FFB733;
+  --tile-text:#0D1B2A;
+  --white:#ffffff;
+  --table-row:#1B3B5C;
+}
+
+/* base */
+*{box-sizing:border-box}
+body{
+  margin:0;
+  padding:20px;
+  font-family: Arial, Helvetica, sans-serif;
+  background:var(--bg);
+  color:var(--white);
+}
+
+/* title */
+h1{
+  margin:0 0 14px 0;
+  color:var(--accent);
+  font-size:1.5rem;
+  letter-spacing:1px;
+}
+
+/* section title */
+.section-title{
+  color:var(--accent);
+  font-weight:700;
+  margin-top:18px;
+  margin-bottom:8px;
+}
+
+/* container centered */
+.container{ max-width:1200px; margin:0 auto; }
+
+/* GENERAL header */
+.header-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-bottom:8px;
+  flex-wrap:wrap;
+}
+.header-row label{
+  color:#fff;
+  font-weight:600;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:0.95rem;
+}
+
+/* inputs */
+input[type="text"], input[type="date"], select {
+  padding:8px 10px;
+  border-radius:8px;
+  border:none;
+  background:#fff;
+  color:#111;
+  font-size:0.95rem;
+  outline:none;
+}
+
+/* sizes */
+#activity, #operator { width:260px; }
+#external-name { width:200px; }
+
+/* PERSON LIST tiles */
+#person-list, #external-list{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:8px;
+  margin:10px auto 18px auto;
+  max-width:1200px;
+}
+.person {
+  background:var(--accent);
+  color:var(--tile-text);
+  padding:8px 10px;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .12s;
+  user-select:none;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.person:hover{ background:var(--accent-strong); }
+.person input[type="checkbox"]{ transform:scale(1.05); }
+
+/* SUMMARY panel */
+#summary{
+  background:var(--panel);
+  padding:14px;
+  border-radius:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.25);
+  max-width:1200px;
+  margin:12px auto 40px auto;
+}
+
+/* table */
+#summary table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+  color:var(--white);
+  font-size:0.95rem;
+}
+#summary th, #summary td{
+  border:1px solid var(--accent);
+  padding:8px 10px;
+  vertical-align:middle;
+  text-align:center;
+}
+#summary th{ background:var(--accent); color:var(--tile-text); font-weight:700; }
+#summary tr:nth-child(even){ background:var(--table-row); }
+#summary td:first-child, #summary td:nth-child(2){ text-align:left; }
+#summary td:first-child{ color:var(--accent); font-weight:700; }
+
+/* inline date+time group in one row */
+.inline-datetime{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap; /* prefer no wrap */
+}
+
+/* make selects smaller */
+#summary select, #summary input[type="date"]{
+  padding:6px 8px;
+  border-radius:6px;
+  border:none;
+  background:#fff;
+  color:#111;
+  font-size:0.9rem;
+}
+
+/* compact in cells */
+.cell-datetime input[type="date"]{ width:120px; }
+.cell-datetime select{ width:56px; }
+
+/* total */
+#total-hours{ text-align:right; margin-top:10px; font-weight:700; color:var(--accent); }
+
+/* pdf button */
+#pdf-button{
+  margin-top:12px;
+  padding:9px 14px;
+  border-radius:8px;
+  border:none;
+  background:var(--accent);
+  color:var(--tile-text);
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* small devices responsiveness - keep date+time inline but smaller */
+@media (max-width:900px){
+
+  body{ padding:10px; }
+  h1{ font-size:1.25rem; margin-bottom:10px; }
+
+  /* header stack vertically and full width */
+  .header-row{ flex-direction:column; align-items:flex-start; gap:8px; }
+  .header-row label{ width:100%; }
+
+  /* tiles: 3 columns on small screens */
+  #person-list, #external-list{ grid-template-columns: repeat(3, 1fr); gap:8px; }
+
+  .person{ padding:6px; font-size:0.92rem; }
+
+  /* smaller inputs */
+  input[type="date"], select{ font-size:0.9rem; padding:6px; }
+
+  /* summary table smaller */
+  #summary table{ font-size:0.88rem; }
+  #summary th, #summary td{ padding:6px 8px; }
+
+  /* cell datetime compact */
+  .cell-datetime input[type="date"]{ width:100px; }
+  .cell-datetime select{ width:44px; padding:4px; font-size:0.85rem; }
+
+  /* inline group allow small wrap if absolutely required but prefer nowrap */
+  .inline-datetime{ flex-wrap:nowrap; overflow:hidden; }
+
+  #pdf-button{ width:100%; padding:10px; font-size:1rem; }
+
+}
+
+/* very small (phones) */
+@media (max-width:600px){
+  #person-list, #external-list{ grid-template-columns: repeat(2, 1fr); }
+  .cell-datetime input[type="date"]{ width:92px; font-size:0.85rem; }
+  .cell-datetime select{ width:40px; font-size:0.82rem; }
+  #summary table{ font-size:0.82rem; }
+  #summary th, #summary td{ padding:5px 6px; }
+}
+
+/* print: ensure table prints nicely */
+@media print {
+  body{ background:#fff; color:#000; }
+  #person-list, #external-list, .person, #external-name, button, #pdf-button { display:none !important; }
+  #summary{ background:#fff; box-shadow:none; }
+  #summary th{ background:#e6a04c !important; -webkit-print-color-adjust:exact; }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>FID- PersonalOrga</h1>
+
+  <div class="section-title">Allgemein</div>
+
+  <div id="general" class="container">
+    <div class="header-row">
+      <label>Tätigkeit
+        <input id="activity" type="text" placeholder="Kurzbeschreibung der Tätigkeit">
+      </label>
+
+      <label>Bearbeiter
+        <input id="operator" type="text" placeholder="Name des Bearbeiters">
+      </label>
+    </div>
+
+    <div class="header-row">
+      <label>Datum Start
+        <input id="global-start-date" type="date">
+      </label>
+
+      <label>Stunde
+        <select id="global-start-hour"><option value=""></option></select>
+      </label>
+
+      <label>Minute
+        <select id="global-start-minute"><option value=""></option></select>
+      </label>
+    </div>
+
+    <div class="header-row">
+      <label>Datum Ende
+        <input id="global-end-date" type="date">
+      </label>
+
+      <label>Stunde
+        <select id="global-end-hour"><option value=""></option></select>
+      </label>
+
+      <label>Minute
+        <select id="global-end-minute"><option value=""></option></select>
+      </label>
+    </div>
+  </div>
+
+  <div class="section-title">Feuerwehr-Personal</div>
+  <div id="person-list" class="container"></div>
+
+  <div class="section-title">Externe Personen hinzufügen</div>
+  <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+    <input id="external-name" type="text" placeholder="Name der externen Person">
+    <button id="add-external" style="background:var(--accent); color:var(--tile-text); border:none; padding:8px 10px; border-radius:6px; font-weight:700;">Hinzufügen</button>
+  </div>
+  <div id="external-list" class="container"></div>
+
+  <div id="summary" class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="section-title" style="margin:0;">Zusammenfassung</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%;">Stunden (h)</th>
+          <th style="width:28%;">Name</th>
+          <th style="width:28%;">Startdatum & Zeit</th>
+          <th style="width:28%;">Enddatum & Zeit</th>
+        </tr>
+      </thead>
+      <tbody id="selected-list"></tbody>
+    </table>
+
+    <div id="total-hours">Gesamtstunden: 0.00 h</div>
+    <button id="pdf-button">PDF erstellen</button>
+  </div>
+
+</div>
+
+<script>
+// ------------------ Daten ------------------
+const persons = [
+"Aicher Johannes","Antlinger Hubert II","Bauer Hubert","Baumgartner Alexander","Baumgartner Simon",
+"Dietach Alois","Dietach Helmut","Doblinger Gerhard","Dunzinger Manuel","Dunzinger Robert",
+"Dunzinger Stefan","Ecker Andreas","Ecker Sandra","Eder Heinz","Eichlberger Christoph",
+"Eichlberger Klaus","Eisterer Wolfgang","Enzlmüller Günther","Falkner David","Falkner Johannes",
+"Falkner Manfred","Falkner Tina","Fent Christoph","Fent Jürgen","Gaisböck Andreas",
+"Grininger David","Grininger Hermann","Grininger Peter","Großfurtner Anja","Großfurtner Elias",
+"Großfurtner Jochen","Haidvogl Christian","Hellmair Daniel","Hellmair Mario","Holzinger Felix",
+"Humer Jakob","Humer Lukas","Humer Michael","Kaufmann Maximilian","Kolmhofer Florian",
+"Kolmhofer Matthias","Kolmhofer Tobias","Kutzenberger Andreas","Kutzenberger Markus",
+"Lauber Christian","Lauber Maximilian","Maier Klaus","Mayrhofer Leopold","Miggisch Florian",
+"Mitterberger Franz","Mitterberger Peter","Mörtlbauer Stephan","Moser Oliver","Ortbauer Christian",
+"Ortbauer Helmut","Osterkorn Franz","Osterkorn Walter jun.","Panhölzl Marco","Razenböck Johannes",
+"Ringer Manfred","Schmid Günther","Sommergruber Rene","Steinböck Ernst","Steinböck Hannes",
+"Wagner Gerhard","Wagner Julian","Wagner Mario","Wagner Markus","Wohlthan Anna","Wohlthan Felix",
+"Wohlthan Johannes","Wöß Holger Johann"
+];
+
+let external = [];
+let summaryData = {}; // name -> {startDate, startHour, startMinute, endDate, endHour, endMinute}
+
+// Refs
+const personList = document.getElementById('person-list');
+const externalList = document.getElementById('external-list');
+const selectedList = document.getElementById('selected-list');
+const totalHoursDiv = document.getElementById('total-hours');
+
+const globalStartDate = document.getElementById('global-start-date');
+const globalEndDate = document.getElementById('global-end-date');
+const globalStartHour = document.getElementById('global-start-hour');
+const globalStartMinute = document.getElementById('global-start-minute');
+const globalEndHour = document.getElementById('global-end-hour');
+const globalEndMinute = document.getElementById('global-end-minute');
+
+// set today
+const today = new Date().toISOString().split('T')[0];
+globalStartDate.value = today;
+globalEndDate.value = today;
+
+// fill hours and minutes
+for(let h=0; h<=23; h++){
+  const o1 = document.createElement('option'); o1.value = h; o1.textContent = String(h).padStart(2,'0');
+  globalStartHour.appendChild(o1.cloneNode(true));
+  globalEndHour.appendChild(o1.cloneNode(true));
+}
+[0,15,30,45].forEach(m=>{
+  const o = document.createElement('option'); o.value = m; o.textContent = String(m).padStart(2,'0');
+  globalStartMinute.appendChild(o.cloneNode(true));
+  globalEndMinute.appendChild(o.cloneNode(true));
+});
+
+// render person tiles
+function renderPersonTiles(){
+  personList.innerHTML = '';
+  persons.forEach(name=>{
+    const tile = document.createElement('div');
+    tile.className = 'person';
+    tile.innerHTML = `<input type="checkbox" class="person-checkbox"><span>${name}</span>`;
+    const cb = tile.querySelector('input');
+    tile.addEventListener('click', (e)=>{
+      // if clicked on control directly ignore duplicate toggling
+      if(e.target.tagName.toLowerCase() === 'input') return;
+      cb.checked = !cb.checked;
+      cb.checked ? addToSummary(name) : removeFromSummary(name);
+    });
+    cb.addEventListener('change', ()=>{
+      cb.checked ? addToSummary(name) : removeFromSummary(name);
+    });
+    personList.appendChild(tile);
+  });
+}
+renderPersonTiles();
+
+// add external
+document.getElementById('add-external').addEventListener('click', ()=>{
+  const v = document.getElementById('external-name').value.trim();
+  if(!v) return;
+  if(persons.includes(v) || external.includes(v)) {
+    document.getElementById('external-name').value = '';
+    return;
+  }
+  external.push(v);
+  renderExternal();
+  document.getElementById('external-name').value = '';
+  addToSummary(v);
+});
+function renderExternal(){
+  externalList.innerHTML = '';
+  external.forEach(name=>{
+    const tile = document.createElement('div');
+    tile.className = 'person';
+    tile.innerHTML = `<input type="checkbox" class="person-checkbox" checked><span>${name}</span>`;
+    const cb = tile.querySelector('input');
+    tile.addEventListener('click',(e)=>{
+      if(e.target.tagName.toLowerCase() === 'input') return;
+      cb.checked = !cb.checked;
+      cb.checked ? addToSummary(name) : removeFromSummary(name);
+    });
+    cb.addEventListener('change', ()=>{ cb.checked ? addToSummary(name) : removeFromSummary(name); });
+    externalList.appendChild(tile);
+  });
+}
+
+// add to summary
+function addToSummary(name){
+  if(summaryData[name]) return;
+  summaryData[name] = {
+    startDate: globalStartDate.value || '',
+    startHour: globalStartHour.value || '',
+    startMinute: globalStartMinute.value || '',
+    endDate: globalEndDate.value || '',
+    endHour: globalEndHour.value || '',
+    endMinute: globalEndMinute.value || ''
+  };
+  renderSummary();
+}
+
+// remove
+function removeFromSummary(name){
+  delete summaryData[name];
+  // uncheck corresponding tile(s)
+  document.querySelectorAll('.person').forEach(tile=>{
+    const span = tile.querySelector('span');
+    const cb = tile.querySelector('input');
+    if(span && cb && span.textContent.trim() === name) cb.checked = false;
+  });
+  renderSummary();
+}
+
+// hours calc supports cross-day
+function calcHours(sd, sh, sm, ed, eh, em){
+  if(!sd || !ed) return 0;
+  if(sh === "" || sm === "" || eh === "" || em === "") return 0;
+  const s = new Date(`${sd}T${String(sh).padStart(2,'0')}:${String(sm).padStart(2,'0')}:00`);
+  const e = new Date(`${ed}T${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}:00`);
+  let diff = e - s;
+  if(isNaN(diff)) return 0;
+  if(diff <= 0) return 0;
+  return diff / 3600000;
+}
+
+// render summary rows
+function renderSummary(){
+  selectedList.innerHTML = '';
+  let total = 0;
+  for(const [name, times] of Object.entries(summaryData)){
+    const hours = calcHours(times.startDate, times.startHour, times.startMinute, times.endDate, times.endHour, times.endMinute);
+    total += hours;
+
+    const tr = document.createElement('tr');
+
+    // hours cell
+    const tdHours = document.createElement('td');
+    tdHours.textContent = hours.toFixed(2);
+
+    // name cell with checkbox
+    const tdName = document.createElement('td');
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
+    cb.addEventListener('change', ()=>{
+      if(!cb.checked) removeFromSummary(name);
+    });
+    tdName.appendChild(cb);
+    tdName.appendChild(document.createTextNode(' ' + name));
+
+    // start cell: inline date + time selects
+    const tdStart = document.createElement('td');
+    tdStart.className = 'cell-datetime';
+    const startWrapper = document.createElement('div');
+    startWrapper.className = 'inline-datetime';
+    // date
+    const inStartDate = document.createElement('input'); inStartDate.type='date'; inStartDate.value = times.startDate || '';
+    inStartDate.addEventListener('change', ()=>{ summaryData[name].startDate = inStartDate.value; renderSummary(); });
+    // hour select
+    const sHour = document.createElement('select');
+    sHour.innerHTML = `<option value=""></option>` + [...Array(24).keys()].map(h=>`<option value="${h}">${String(h).padStart(2,'0')}</option>`).join('');
+    sHour.value = (times.startHour === undefined) ? '' : String(times.startHour);
+    sHour.addEventListener('change', ()=>{ summaryData[name].startHour = sHour.value; renderSummary(); });
+    // minute select
+    const sMin = document.createElement('select');
+    sMin.innerHTML = `<option value=""></option>` + [0,15,30,45].map(m=>`<option value="${m}">${String(m).padStart(2,'0')}</option>`).join('');
+    sMin.value = (times.startMinute === undefined) ? '' : String(times.startMinute);
+    sMin.addEventListener('change', ()=>{ summaryData[name].startMinute = sMin.value; renderSummary(); });
+
+    startWrapper.appendChild(inStartDate);
+    startWrapper.appendChild(sHour);
+    startWrapper.appendChild(document.createTextNode(':'));
+    startWrapper.appendChild(sMin);
+    tdStart.appendChild(startWrapper);
+
+    // end cell
+    const tdEnd = document.createElement('td');
+    tdEnd.className = 'cell-datetime';
+    const endWrapper = document.createElement('div');
+    endWrapper.className = 'inline-datetime';
+    const inEndDate = document.createElement('input'); inEndDate.type='date'; inEndDate.value = times.endDate || '';
+    inEndDate.addEventListener('change', ()=>{ summaryData[name].endDate = inEndDate.value; renderSummary(); });
+    const eHour = document.createElement('select');
+    eHour.innerHTML = `<option value=""></option>` + [...Array(24).keys()].map(h=>`<option value="${h}">${String(h).padStart(2,'0')}</option>`).join('');
+    eHour.value = (times.endHour === undefined) ? '' : String(times.endHour);
+    eHour.addEventListener('change', ()=>{ summaryData[name].endHour = eHour.value; renderSummary(); });
+    const eMin = document.createElement('select');
+    eMin.innerHTML = `<option value=""></option>` + [0,15,30,45].map(m=>`<option value="${m}">${String(m).padStart(2,'0')}</option>`).join('');
+    eMin.value = (times.endMinute === undefined) ? '' : String(times.endMinute);
+    eMin.addEventListener('change', ()=>{ summaryData[name].endMinute = eMin.value; renderSummary(); });
+
+    endWrapper.appendChild(inEndDate);
+    endWrapper.appendChild(eHour);
+    endWrapper.appendChild(document.createTextNode(':'));
+    endWrapper.appendChild(eMin);
+    tdEnd.appendChild(endWrapper);
+
+    tr.appendChild(tdHours);
+    tr.appendChild(tdName);
+    tr.appendChild(tdStart);
+    tr.appendChild(tdEnd);
+    selectedList.appendChild(tr);
+  }
+
+  totalHoursDiv.textContent = `Gesamtstunden: ${total.toFixed(2)} h`;
+
+  // sync checkboxes in tiles with summaryData
+  document.querySelectorAll('.person').forEach(tile=>{
+    const span = tile.querySelector('span');
+    const cb = tile.querySelector('input');
+    if(span && cb){
+      cb.checked = !!summaryData[span.textContent.trim()];
+    }
+  });
+}
+
+// initialize empty
+renderSummary();
+
+// When global header changes, update summary entries that still have global values,
+// BUT per earlier requirements, once a user manually changed in summary that overrides global.
+// Here: only set initial times on add; changing global afterwards updates those summary entries
+// that still equal the previous global value — to keep it simple we will apply global changes
+// to all summary entries that were not individually changed (i.e., their values equal previous global or empty).
+// For simplicity and reliability we update all summary entries whenever global changes only if user confirms.
+// To keep behavior simple: when global change occurs, we update only entries that have empty fields.
+
+function applyGlobalToEmpty(){
+  for(const [name, t] of Object.entries(summaryData)){
+    if(!t.startDate) t.startDate = globalStartDate.value;
+    if(!t.startHour) t.startHour = globalStartHour.value;
+    if(!t.startMinute) t.startMinute = globalStartMinute.value;
+    if(!t.endDate) t.endDate = globalEndDate.value;
+    if(!t.endHour) t.endHour = globalEndHour.value;
+    if(!t.endMinute) t.endMinute = globalEndMinute.value;
+  }
+  renderSummary();
+}
+
+// attach global change listeners
+[globalStartDate, globalStartHour, globalStartMinute, globalEndDate, globalEndHour, globalEndMinute]
+.forEach(el=>{
+  el.addEventListener('change', ()=>{ applyGlobalToEmpty(); });
+});
+
+// remove person via clicking name checkbox in summary is handled by that checkbox's change event
+
+// ------------ PDF Export --------------
+document.getElementById('pdf-button').addEventListener('click', ()=>{
+  // prepare rows from summaryData
+  const rows = [];
+  for(const [name, t] of Object.entries(summaryData)){
+    const sDate = t.startDate || '-';
+    const sH = (t.startHour === '' || t.startHour === undefined) ? '--' : String(t.startHour).padStart(2,'0');
+    const sM = (t.startMinute === '' || t.startMinute === undefined) ? '--' : String(t.startMinute).padStart(2,'0');
+    const eDate = t.endDate || '-';
+    const eH = (t.endHour === '' || t.endHour === undefined) ? '--' : String(t.endHour).padStart(2,'0');
+    const eM = (t.endMinute === '' || t.endMinute === undefined) ? '--' : String(t.endMinute).padStart(2,'0');
+    const hours = calcHours(t.startDate, t.startHour, t.startMinute, t.endDate, t.endHour, t.endMinute);
+    rows.push([ hours.toFixed(2), name, `${sDate} ${sH}:${sM}`, `${eDate} ${eH}:${eM}` ]);
+  }
+
+  if(rows.length === 0){
+    alert('Keine Personen ausgewählt — bitte wähle mindestens eine Person aus.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // header
+  doc.setFontSize(18);
+  doc.setTextColor(13,34,66);
+  doc.text('FID – PersonalOrga', pageWidth/2, 18, { align: 'center' });
+
+  doc.setFontSize(11);
+  doc.setTextColor(0,0,0);
+  const activity = document.getElementById('activity').value || '';
+  const operator = document.getElementById('operator').value || '';
+  doc.text(`Tätigkeit: ${activity}`, 14, 28);
+  doc.text(`Bearbeiter: ${operator}`, 14, 34);
+
+  // header times (global)
+  const sd = globalStartDate.value || '-';
+  const sh = globalStartHour.value !== '' ? String(globalStartHour.value).padStart(2,'0') : '--';
+  const sm = globalStartMinute.value !== '' ? String(globalStartMinute.value).padStart(2,'0') : '--';
+  const ed = globalEndDate.value || '-';
+  const eh = globalEndHour.value !== '' ? String(globalEndHour.value).padStart(2,'0') : '--';
+  const em = globalEndMinute.value !== '' ? String(globalEndMinute.value).padStart(2,'0') : '--';
+
+  doc.text(`Start: ${sd} ${sh}:${sm}`, 14, 42);
+  doc.text(`Ende:  ${ed} ${eh}:${em}`, 14, 48);
+
+  // table
+  doc.autoTable({
+    startY: 56,
+    head: [['Stunden (h)', 'Name', 'Start (Datum Zeit)', 'Ende (Datum Zeit)']],
+    body: rows,
+    styles: { fontSize:10, textColor:[0,0,0] },
+    headStyles: { fillColor:[255,165,0], textColor:[13,34,66], halign:'center' },
+    columnStyles: {
+      0: { cellWidth:22, halign:'center' },
+      1: { cellWidth:60, halign:'left' },
+      2: { cellWidth:54, halign:'center' },
+      3: { cellWidth:54, halign:'center' }
+    },
+    theme:'grid',
+    margin:{ left:14, right:14 }
+  });
+
+  // total
+  const total = rows.reduce((acc, r) => acc + parseFloat(r[0]), 0);
+  const finalY = doc.autoTable.previous && doc.autoTable.previous.finalY ? doc.autoTable.previous.finalY : 56 + rows.length*8;
+  doc.setFontSize(12);
+  doc.setTextColor(13,34,66);
+  doc.text(`Gesamtstunden: ${total.toFixed(2)} h`, pageWidth - 14, finalY + 8, { align:'right' });
+
+  // footer timestamp
+  const createdAt = new Date();
+  const createdTxt = `Erstellt: ${createdAt.toLocaleDateString()} ${createdAt.toLocaleTimeString()}`;
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text(createdTxt, 14, 287);
+
+  const filename = `PersonalOrga_${(new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-')}.pdf`;
+  doc.save(filename);
+});
+
+// ensure global changes apply to empty fields on load
+function applyGlobalToEmpty(){
+  for(const [name,t] of Object.entries(summaryData)){
+    if(!t.startDate) t.startDate = globalStartDate.value;
+    if(!t.startHour) t.startHour = globalStartHour.value;
+    if(!t.startMinute) t.startMinute = globalStartMinute.value;
+    if(!t.endDate) t.endDate = globalEndDate.value;
+    if(!t.endHour) t.endHour = globalEndHour.value;
+    if(!t.endMinute) t.endMinute = globalEndMinute.value;
+  }
+  renderSummary();
+}
+[globalStartDate, globalStartHour, globalStartMinute, globalEndDate, globalEndHour, globalEndMinute].forEach(el=>{
+  el.addEventListener('change', ()=>{ applyGlobalToEmpty(); });
+});
+
+// keep person checkbox sync when summary changes (renderSummary handles this)
+// Keep initializations
+renderPersonTiles(); // defined earlier? ensure defined; if not, call renderPersonTiles here.
+// Note: renderPersonTiles was defined above as renderPersonTiles() earlier. If not, call renderPersonTiles() now.
+
+</script>
+</body>
+</html>
